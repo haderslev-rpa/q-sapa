@@ -16,7 +16,7 @@ async def launch_sapa(
 
     try:
         # ---------------------------------------------
-        # ✅ Valider input (KRAV: præcis én True)
+        # ✅ Valider input
         # ---------------------------------------------
         if advis == overblik:
             raise ValueError(
@@ -26,12 +26,9 @@ async def launch_sapa(
         # ---------------------------------------------
         # ✅ Vælg URL
         # ---------------------------------------------
-        if advis:
-            SAPA_URL = "https://sapaadvis.dk/"
-        else:
-            SAPA_URL = "https://sapaoverblik.dk/"
+        SAPA_URL = "https://sapaadvis.dk/" if advis else "https://sapaoverblik.dk/"
 
-        print(f"🌐 Starter SAPA: {SAPA_URL}")
+        print(f"🌐 Går til SAPA: {SAPA_URL}")
 
         # ---------------------------------------------
         # ✅ 1) Gå til SAPA
@@ -43,46 +40,63 @@ async def launch_sapa(
             await dbg.screenshot(page, "STEP_1_startside")
 
         # ---------------------------------------------
-        # ✅ 2) Vælg kommune hvis nødvendigt
+        # ✅ 2) Check login nødvendigt (kommune dropdown)
         # ---------------------------------------------
         locator = page.locator("#SelectedAuthenticationUrl")
 
         if await locator.count() > 0:
-            print("🔐 Vælger kommune...")
+            print("🔐 Ikke logget ind – starter login")
 
             await locator.select_option(label="Haderslev Kommune")
             await page.locator("#btnOK").click()
             await page.wait_for_load_state("networkidle")
 
             if debug:
-                await dbg.screenshot(page, "STEP_2_kommune_valgt")
+                await dbg.screenshot(page, "STEP_2_kommune")
+
+            # ---------------------------------------------
+            # ✅ 3) Login (FKI)
+            # ---------------------------------------------
+            await login_via_faelles_kommunal_idp(
+                page=page,
+                credential_name="DIRXOPS",
+                debug=debug
+            )
+
+            # ---------------------------------------------
+            # ✅ 4) Vent på redirect fra IDP
+            # ---------------------------------------------
+            print("⏳ Venter på redirect fra IDP...")
+
+            for _ in range(5):
+                if "idp" in page.url.lower():
+                    await page.wait_for_timeout(1500)
+                else:
+                    break
+
+            # ---------------------------------------------
+            # ✅ Hvis vi stadig hænger på IDP → force tilbage
+            # ---------------------------------------------
+            if "idp" in page.url.lower():
+                print("⚠️ Stadig på IDP – tvinger tilbage til SAPA")
+                await page.goto(SAPA_URL)
+
+            await page.wait_for_load_state("networkidle")
+
+        else:
+            print("✅ Allerede logget ind i SAPA")
 
         # ---------------------------------------------
-        # ✅ 3) Login (FKI)
+        # ✅ Final
         # ---------------------------------------------
-        print("🔐 Logger ind via FKI...")
-
-        await login_via_faelles_kommunal_idp(
-            page=page,
-            credential_name="DIRXOPS",
-            debug=debug
-        )
-
-        if debug:
-            await dbg.screenshot(page, "STEP_3_efter_login")
-
-        # ---------------------------------------------
-        # ✅ 4) Reload SAPA efter login
-        # ---------------------------------------------
-        await page.goto(SAPA_URL)
-        await page.wait_for_load_state("networkidle")
-
         if debug:
             await dbg.screenshot(page, "STEP_4_klar")
 
+        print("✅ SAPA klar:", page.url)
+
         return page
 
-    except Exception as e:
+    except Exception:
         if debug:
             await dbg.screenshot(page, "FEJL_launch_sapa")
         raise
