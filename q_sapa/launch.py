@@ -1,20 +1,15 @@
-from playwright.async_api import Page
 from q_haderslev_vbo.playwright.faelles_kommunal_login_idp import (
     login_via_faelles_kommunal_idp
 )
-from q_haderslev_vbo.playwright.playwright_debughelper import PlaywrightDebugHelper
-
 
 async def launch_sapa(
-    page: Page,
+    page,
+    session,
     advis: bool = False,
     overblik: bool = False,
-    debug: bool = False
-) -> Page:
+    ):
 
-    dbg = PlaywrightDebugHelper(debug=debug)
 
-    try:
         # ---------------------------------------------
         # ✅ Valider input
         # ---------------------------------------------
@@ -36,8 +31,7 @@ async def launch_sapa(
         await page.goto(SAPA_URL)
         await page.wait_for_load_state("domcontentloaded")
 
-        if debug:
-            await dbg.screenshot(page, "STEP_1_startside")
+        await session.recorder.screenshot(page, "STEP_1_startside")
 
         # ---------------------------------------------
         # ✅ 2) Check login nødvendigt (kommune dropdown)
@@ -51,8 +45,8 @@ async def launch_sapa(
             await page.locator("#btnOK").click()
             await page.wait_for_load_state("networkidle")
 
-            if debug:
-                await dbg.screenshot(page, "STEP_2_kommune")
+            
+            await session.recorder.screenshot(page, "STEP_2_kommune")
 
             # ---------------------------------------------
             # ✅ 3) Login (FKI)
@@ -60,7 +54,7 @@ async def launch_sapa(
             await login_via_faelles_kommunal_idp(
                 page=page,
                 credential_name="DIRXOPS",
-                debug=debug
+                session=session
             )
 
             # ---------------------------------------------
@@ -89,14 +83,7 @@ async def launch_sapa(
         # ---------------------------------------------
         # ✅ Final
         # ---------------------------------------------
-        if debug:
-            await dbg.screenshot(page, "STEP_4_klar")
+
+        await session.recorder.screenshot(page, "STEP_4_klar")
 
         print("✅ SAPA klar:", page.url)
-
-        return page
-
-    except Exception:
-        if debug:
-            await dbg.screenshot(page, "FEJL_launch_sapa")
-        raise
