@@ -52,7 +52,7 @@ async def launch_sapa(
             # ✅ 3) Login (FKI)
             # ---------------------------------------------
             await login_via_faelles_kommunal_idp(
-                page=page,
+                page,
                 credential_name="DIRXOPS",
                 session=session
             )
