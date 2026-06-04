@@ -1,6 +1,4 @@
 from playwright.async_api import Page
-from q_haderslev_vbo.playwright.playwright_debughelper import PlaywrightDebugHelper
-
 
 # ==================================================
 # ✅ XPATH
@@ -13,12 +11,10 @@ FAERDIGGOER_XPATH = "//button[@id='faerdiggoer']"
 # ==================================================
 async def advis_marker_faerdiggjort(
     page: Page,
+    session,
     url_til_advis: str,
     timeout: int = 15000,
-    debug: bool = False
 ) -> None:
-
-    dbg = PlaywrightDebugHelper(debug=debug)
 
     try:
         print("🔗 Åbner advis...")
@@ -29,8 +25,7 @@ async def advis_marker_faerdiggjort(
         await page.goto(url_til_advis)
         await page.wait_for_load_state("networkidle")
 
-        if debug:
-            await dbg.screenshot(page, "STEP_advis_loaded")
+        await session.recorder.screenshot(page, "STEP_advis_loaded")
 
         # ---------------------------------------------
         # ✅ 2) Klik “Færdiggør”
@@ -44,10 +39,11 @@ async def advis_marker_faerdiggjort(
 
         print("✅ Advis markeret som færdiggjort")
 
-        if debug:
-            await dbg.screenshot(page, "STEP_faerdiggjort")
+        await session.recorder.screenshot(page, "STEP_faerdiggjort")
 
     except Exception:
-        if debug:
-            await dbg.screenshot(page, "FEJL_faerdiggoer")
+        # ---------------------------------------------
+        # ✅ Fejlscreenshot (samme pattern som launch)
+        # ---------------------------------------------
+        await session.recorder.screenshot(page, "FEJL_faerdiggoer")
         raise

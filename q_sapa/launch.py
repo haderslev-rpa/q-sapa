@@ -25,9 +25,6 @@ async def launch_sapa(
 
         print(f"🌐 Går til SAPA: {SAPA_URL}")
 
-        # ---------------------------------------------
-        # ✅ 1) Gå til SAPA
-        # ---------------------------------------------
         await page.goto(SAPA_URL)
         await page.wait_for_load_state("domcontentloaded")
 
@@ -45,16 +42,12 @@ async def launch_sapa(
             await page.locator("#btnOK").click()
             await page.wait_for_load_state("networkidle")
 
-            
             await session.recorder.screenshot(page, "STEP_2_kommune")
 
-            # ---------------------------------------------
-            # ✅ 3) Login (FKI)
-            # ---------------------------------------------
             await login_via_faelles_kommunal_idp(
                 page,
-                credential_name="DIRXOPS",
-                session=session
+                session=session,
+                credential_name="DIRXOPS" 
             )
 
             # ---------------------------------------------
