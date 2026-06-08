@@ -21,16 +21,13 @@ DATO_XPATH = ".//td[@data-value]//p"
 
 ADVIS_BUTTON_XPATH = ".//button[contains(@class,'set-advis-open-button')]"
 
+NO_RESULTS_XPATH = "//h4[contains(normalize-space(),'Ingen adviser')]"
+
 
 # ==================================================
-# ✅ KOMPLET FLOW (ALT I ÉN)
+# ✅ FUNKTION
 # ==================================================
-async def soeg_advis(
-    page,
-    session,
-    tekst: str,
-    timeout: int = 15000,
-) -> list:
+async def soeg_advis(page, session, tekst: str, timeout: int = 15000) -> list:
 
     # ---------------------------------------------
     # ✅ 1) Gå til søgeside
@@ -39,9 +36,10 @@ async def soeg_advis(
 
     SOEG_URL = "https://sapaadvis.dk/Soege?clearSessionState=True&restoreResults=True"
     await page.goto(SOEG_URL)
-    await page.wait_for_load_state("networkidle")
 
-    await session.recorder.screenshot(page, "STEP_soeg_side")
+    print(f"🌐 URL efter goto: {page.url}")
+
+    await page.wait_for_load_state("networkidle")
 
     # ---------------------------------------------
     # ✅ 2) Vælg advisgruppe
@@ -69,25 +67,51 @@ async def soeg_advis(
     # ---------------------------------------------
     # ✅ 3) Klik søg
     # ---------------------------------------------
+    print("🔍 Klikker 'Søg'...")
+
     soeg_knap = page.locator(f"xpath={BUTTON_XPATH}")
     await soeg_knap.wait_for(state="visible", timeout=timeout)
     await soeg_knap.click()
 
+    await page.wait_for_timeout(500)
+
+    # ✅ WAIT på DOM (robust SAPA fix)
+    await page.wait_for_function(
+        """
+        () => {
+            const result = document.querySelector('#SoegeresultatTotalResults');
+            const hasResults = result && result.innerText.trim() !== '';
+
+            const noResults = Array.from(document.querySelectorAll('h4'))
+                .some(el => el.innerText.includes('Ingen adviser'));
+
+            const rows = document.querySelectorAll('table tbody tr').length > 0;
+
+            return hasResults || noResults || rows;
+        }
+        """
+    )
+
+    await page.wait_for_timeout(300)
+
     await session.recorder.screenshot(page, "STEP_soeg_klikket")
 
     # ---------------------------------------------
-    # ✅ 4) Vent på resultater (ROBUST FIX)
+    # ✅ 4) Tjek "Ingen adviser"
+    # ---------------------------------------------
+    no_results = page.locator(f"xpath={NO_RESULTS_XPATH}")
+
+    if await no_results.count() > 0:
+        print("✅ Ingen adviser blev fundet")
+        return []
+
+    # ---------------------------------------------
+    # ✅ 5) Læs antal resultater
     # ---------------------------------------------
     result_el = page.locator(f"xpath={RESULT_XPATH}")
     await result_el.wait_for(state="visible", timeout=timeout)
 
-    # ✅ Vent på at teksten faktisk er udfyldt
-    await page.wait_for_function(
-        "document.querySelector('#SoegeresultatTotalResults')?.innerText.trim() !== ''"
-    )
-
-    antal_text = await result_el.inner_text()
-    antal_text = antal_text.strip()
+    antal_text = (await result_el.inner_text()).strip()
 
     if not antal_text:
         antal = 0
@@ -100,7 +124,7 @@ async def soeg_advis(
         return []
 
     # ---------------------------------------------
-    # ✅ 5) Læs rækker
+    # ✅ 6) Læs rækker
     # ---------------------------------------------
     rows = page.locator(f"xpath={ROWS_XPATH}")
     total_rows = await rows.count()
@@ -131,17 +155,13 @@ async def soeg_advis(
         except Exception:
             continue
 
-        data = {
+        resultater.append({
             "cpr": cpr.strip(),
             "navn": navn.strip(),
             "haendelse": haendelse.strip(),
             "dato": dato.strip(),
             "url_til_advis": url
-        }
-
-        resultater.append(data)
-
-    await session.recorder.screenshot(page, "STEP_resultater_udtraekket")
+        })
 
     print("✅ Flow færdig")
 
