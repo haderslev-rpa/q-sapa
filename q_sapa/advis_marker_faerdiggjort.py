@@ -37,13 +37,16 @@ async def advis_marker_faerdiggjort(
 
         await faerdig_btn.click()
 
+        # ✅ 🔥 0,5 sekund wait efter klik
+        await page.wait_for_timeout(500)
+
         print("✅ Advis markeret som færdiggjort")
 
         await session.recorder.screenshot(page, "STEP_faerdiggjort")
 
     except Exception:
         # ---------------------------------------------
-        # ✅ Fejlscreenshot (samme pattern som launch)
+        # ✅ Fejlscreenshot
         # ---------------------------------------------
         await session.recorder.screenshot(page, "FEJL_faerdiggoer")
         raise
