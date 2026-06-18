@@ -1,52 +1,29 @@
-from playwright.async_api import Page
-
-# ==================================================
-# ✅ XPATH
-# ==================================================
-FAERDIGGOER_XPATH = "//button[@id='faerdiggoer']"
+from q_sapa.selectors import SAPASelectors
+from q_haderslev_vbo.playwright.faelles_kommunal_login_idp import (
+    login_via_faelles_kommunal_idp
+)
 
 
-# ==================================================
-# ✅ FUNKTION
-# ==================================================
-async def advis_marker_faerdiggjort(
-    page: Page,
-    session,
-    url_til_advis: str,
-    timeout: int = 15000,
-) -> None:
+async def launch_sapa(page, session, advis: bool = False, overblik: bool = False):
 
-    try:
-        print("🔗 Åbner advis...")
+    if advis == overblik:
+        raise ValueError("❌ Vælg advis eller overblik")
 
-        # ---------------------------------------------
-        # ✅ 1) Gå til advis
-        # ---------------------------------------------
-        await page.goto(url_til_advis)
+    SAPA_URL = "https://sapaadvis.dk/" if advis else "https://sapaoverblik.dk/"
+
+    await page.goto(SAPA_URL)
+    await page.wait_for_load_state("domcontentloaded")
+
+    locator = page.locator(SAPASelectors.Login.MUNICIPALITY_SELECT)
+
+    if await locator.count() > 0:
+        await locator.select_option(label="Haderslev Kommune")
+        await page.locator(SAPASelectors.Login.OK_BUTTON).click()
+
+        await login_via_faelles_kommunal_idp(
+            page,
+            session=session,
+            credential_name="DIRXOPS"
+        )
+
         await page.wait_for_load_state("networkidle")
-
-        await session.recorder.screenshot(page, "STEP_advis_loaded")
-
-        # ---------------------------------------------
-        # ✅ 2) Klik “Færdiggør”
-        # ---------------------------------------------
-        print("🔍 Finder 'Færdiggør'...")
-
-        faerdig_btn = page.locator(f"xpath={FAERDIGGOER_XPATH}")
-        await faerdig_btn.wait_for(state="visible", timeout=timeout)
-
-        await faerdig_btn.click()
-
-        # ✅ 🔥 0,5 sekund wait efter klik
-        await page.wait_for_timeout(500)
-
-        print("✅ Advis markeret som færdiggjort")
-
-        await session.recorder.screenshot(page, "STEP_faerdiggjort")
-
-    except Exception:
-        # ---------------------------------------------
-        # ✅ Fejlscreenshot
-        # ---------------------------------------------
-        await session.recorder.screenshot(page, "FEJL_faerdiggoer")
-        raise

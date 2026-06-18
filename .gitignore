@@ -2,8 +2,8 @@
 __pycache__/
 .env
 .vscode/
+tests_local*/
 test_local*/
-
 # Playwright
 node_modules/
 /test-results/

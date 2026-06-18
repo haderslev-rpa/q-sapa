@@ -2,6 +2,7 @@ from q_haderslev_vbo.playwright.faelles_kommunal_login_idp import (
     login_via_faelles_kommunal_idp
 )
 
+
 async def launch_sapa(
     page,
     session,
@@ -28,7 +29,7 @@ async def launch_sapa(
         await page.goto(SAPA_URL)
         await page.wait_for_load_state("domcontentloaded")
 
-        await session.recorder.screenshot(page, "STEP_1_startside")
+        await session.screenshot(page, "STEP_1_startside")
 
         # ---------------------------------------------
         # ✅ 2) Check login nødvendigt (kommune dropdown)
@@ -42,7 +43,7 @@ async def launch_sapa(
             await page.locator("#btnOK").click()
             await page.wait_for_load_state("networkidle")
 
-            await session.recorder.screenshot(page, "STEP_2_kommune")
+            await session.screenshot(page, "STEP_2_kommune")
 
             await login_via_faelles_kommunal_idp(
                 page,
@@ -77,6 +78,6 @@ async def launch_sapa(
         # ✅ Final
         # ---------------------------------------------
 
-        await session.recorder.screenshot(page, "STEP_4_klar")
+        await session.screenshot(page, "STEP_4_klar")
 
         print("✅ SAPA klar:", page.url)
