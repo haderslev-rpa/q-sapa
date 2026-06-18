@@ -1,7 +1,14 @@
 class SAPASelectors:
 
+    class Login:
+        MUNICIPALITY_SELECT = "#SelectedAuthenticationUrl"
+        OK_BUTTON = "#btnOK"
+
     class Advis:
 
+        # ---------------------------------------------
+        # ✅ Select2 (behold XPath – nødvendig her)
+        # ---------------------------------------------
         INPUT = "//div[@id='s2id_advisgrupper-hidden']//input[contains(@class,'select2-input')]"
 
         VALUE_TEMPLATE = (
@@ -10,17 +17,38 @@ class SAPASelectors:
             "//div[normalize-space()='{}']"
         )
 
-        BUTTON = "//button[@id='AdvisSoegningSoegKnap']"
-        RESULT = "//span[@id='SoegeresultatTotalResults']"
-        ROWS = "//table//tbody/tr"
+        # ---------------------------------------------
+        # ✅ Søg
+        # ---------------------------------------------
+        BUTTON = "#AdvisSoegningSoegKnap"
+        RESULT = "#SoegeresultatTotalResults"
 
-        CPR = ".//td[contains(@class,'Attr_PartPrettyNummer')]//p"
-        NAVN = ".//td[contains(@class,'Attr_PartNavn')]//p"
-        HAENDELSE = ".//td[contains(@class,'Attr_HaendelsestypeTitel')]//a"
-        DATO = ".//td[@data-value]//p"
+        # ---------------------------------------------
+        # ✅ NY: Stabil tabel selector (KRITISK FIX)
+        # ---------------------------------------------
+        TABLE = "#AdvisTable"
+        ROWS = "#AdvisTable tbody tr"
 
-        OPEN_BUTTON = ".//button[contains(@class,'set-advis-open-button')]"
+        # ---------------------------------------------
+        # ✅ NY: Kolonne selectors (100% stabile)
+        # matcher din HTML
+        # ---------------------------------------------
+        CPR = "td.Attr_PartPrettyNummer p.part-dialogintegration"
+        NAVN = "td.Attr_PartNavn p.part-dialogintegration"
+        HAENDELSE = "td.Attr_HaendelsestypeTitel a"
+        DATO = "td[data-value] p"
 
+        # ---------------------------------------------
+        # ✅ Handlinger
+        # ---------------------------------------------
+        OPEN_BUTTON = "button.set-advis-open-button"
+
+        # ---------------------------------------------
+        # ✅ Ingen resultater
+        # ---------------------------------------------
         NO_RESULTS = "//h4[contains(normalize-space(),'Ingen adviser')]"
 
-        FAERDIGGOER = "//button[@id='faerdiggoer']"
+        # ---------------------------------------------
+        # ✅ Færdiggør (behold)
+        # ---------------------------------------------
+        FAERDIGGOER = "#faerdiggoer"
