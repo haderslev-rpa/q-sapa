@@ -1,11 +1,23 @@
 import asyncio
+import os
+
+from dotenv import load_dotenv  # bibliotek (pakke → ekstern kode)
 
 from q_haderslev_vbo.playwright.browser_session import BrowserSession
-
-from q_sapa.functionality import launch_sapa, soeg_advis
+from q_sapa.functionality import launch_sapa, advis_marker_faerdiggjort
 
 
 async def main():
+
+    # ---------------------------------------------
+    # ✅ Load .env (miljøvariabler → konfiguration)
+    # ---------------------------------------------
+    load_dotenv()
+
+    url_til_advis = os.getenv("SAPA_ADVIS_URL")  # variabel (gemt værdi)
+
+    if not url_til_advis:
+        raise ValueError("❌ SAPA_ADVIS_URL mangler i .env")
 
     # ---------------------------------------------
     # ✅ Start browser
@@ -16,7 +28,7 @@ async def main():
 
     try:
         # ---------------------------------------------
-        # ✅ 1) Launch SAPA (ADVIS)
+        # ✅ 1) Launch SAPA (login + klar)
         # ---------------------------------------------
         await launch_sapa(
             page=page,
@@ -25,24 +37,15 @@ async def main():
         )
 
         # ---------------------------------------------
-        # ✅ 2) Kør søgning
+        # ✅ 2) Gå til advis og færdiggør
         # ---------------------------------------------
-        resultater = await soeg_advis(
+        await advis_marker_faerdiggjort(
             page=page,
             session=session,
-            tekst="Arbejdsskadehændelser"
+            url_til_advis=url_til_advis
         )
 
-        # ---------------------------------------------
-        # ✅ 3) Print resultater
-        # ---------------------------------------------
-        print("\n📊 RESULTATER:")
-
-        if not resultater:
-            print("Ingen resultater fundet")
-        else:
-            for i, r in enumerate(resultater, start=1):
-                print(f"{i}. {r}")
+        print("\n✅ TEST OK - advis færdiggjort")
 
     finally:
         # ---------------------------------------------

@@ -4,6 +4,15 @@ class SAPASelectors:
         MUNICIPALITY_SELECT = "#SelectedAuthenticationUrl"
         OK_BUTTON = "#btnOK"
 
+    
+
+
+    class Frontpage_advis:
+        FAELLESSOEGER_TABLE = "#DelteSoegningerTabel"
+
+
+
+
     class Advis:
 
         # ---------------------------------------------
